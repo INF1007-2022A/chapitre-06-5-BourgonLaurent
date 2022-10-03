@@ -21,8 +21,24 @@ def check_brackets(text: str, brackets: Sequence[str]):
     return not queue
 
 
-def remove_comments(full_text, comment_start, comment_end):
-    return ""
+def remove_comments(full_text: str, comment_start: str, comment_end: str):
+    end_comm_len = len(comment_end)
+    while True:
+        start_pos = full_text.find(comment_start)
+        end_pos = full_text.find(comment_end)
+
+        ## Check failures
+        #
+        #    If both failed: removed all comments
+        if start_pos == -1 and end_pos == -1:
+            return full_text
+        #    One of them failed: incomplete comments
+        # OR
+        #    Wrong type of matching comments
+        elif start_pos == -1 or end_pos == -1 or start_pos > end_pos:
+            return None
+
+        full_text = full_text[:start_pos] + full_text[end_pos + end_comm_len :]
 
 
 def get_tag_prefix(text, opening_tags, closing_tags):
