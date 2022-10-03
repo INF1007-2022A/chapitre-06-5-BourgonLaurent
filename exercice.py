@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 
 from typing import Sequence
@@ -10,15 +9,15 @@ def check_brackets(text: str, brackets: Sequence[str]):
     closing_brackets = brackets[1::2]
     get_close_from_open = dict(zip(opening_brackets, closing_brackets))
 
-    queue = []
+    stack = []
     for char in text:
         if char in opening_brackets:
-            queue.append(get_close_from_open[char])
+            stack.append(get_close_from_open[char])
         elif char in closing_brackets:
-            if not queue or char != queue.pop():
+            if not stack or char != stack.pop():
                 return False
 
-    return not queue
+    return not stack
 
 
 def remove_comments(full_text: str, comment_start: str, comment_end: str):
@@ -41,12 +40,46 @@ def remove_comments(full_text: str, comment_start: str, comment_end: str):
         full_text = full_text[:start_pos] + full_text[end_pos + end_comm_len :]
 
 
-def get_tag_prefix(text, opening_tags, closing_tags):
+def get_tag_prefix(
+    text: str,
+    opening_tags: Sequence[str],
+    closing_tags: Sequence[str],
+) -> tuple[str | None, str | None]:
+    for matching_tags in zip(opening_tags, closing_tags):
+        if text.startswith(m := matching_tags[0]):
+            return (m, None)
+        elif text.startswith(m := matching_tags[1]):
+            return (None, m)
+
     return (None, None)
 
 
-def check_tags(full_text, tag_names, comment_tags):
-    return False
+def check_tags(
+    full_text: str,
+    tag_names: Sequence[str],
+    comment_tags: Sequence[str],
+) -> bool:
+    text = remove_comments(full_text, *comment_tags)
+    if not text:
+        return False
+
+    close_to_open_tags = {f"</{t}>": f"<{t}>" for t in tag_names}
+
+    stack = []
+    while text:
+        tag = get_tag_prefix(text, close_to_open_tags.values(), close_to_open_tags)  # type: ignore
+        if t := tag[0]:
+            stack.append(t)
+            text = text[len(t) :]
+        elif t := tag[1]:
+            if not stack or stack.pop() != close_to_open_tags[t]:
+                return False
+
+            text = text[len(t) :]
+        else:
+            text = text[1:]
+
+    return not stack
 
 
 if __name__ == "__main__":
